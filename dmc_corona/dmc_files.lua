@@ -134,10 +134,8 @@ local File = require 'lua_files'
 --====================================================================--
 
 
-
---====================================================================--
---== fileExists()
-
+--======================================================--
+-- fileExists()
 
 -- http://docs.coronalabs.com/api/library/system/pathForFile.html
 -- check to see if a file already exists in storage
@@ -152,10 +150,8 @@ function File.fileExists( filename, options )
 end
 
 
-
---====================================================================--
---== remove()
-
+--======================================================--
+-- remove()
 
 -- item is a path
 function File._removeFile( f_path, f_options )
