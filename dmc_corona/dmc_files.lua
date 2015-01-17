@@ -1,8 +1,7 @@
 --====================================================================--
--- dmc_files.lua
+-- dmc_corona/dmc_files.lua
 --
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_files.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
