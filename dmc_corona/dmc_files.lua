@@ -125,26 +125,13 @@ local dmc_files_data = Utils.extend( dmc_lib_data.dmc_files, DMC_FILES_DEFAULTS 
 
 
 local lfs = require 'lfs'
-local LuaFile = require 'lua_files'
-local Objects = require 'lua_objects'
-
-
-
---====================================================================--
---== Setup, Constants
-
-
--- setup some aliases to make code cleaner
-local newClass = Objects.newClass
+local File = require 'lua_files'
 
 
 
 --====================================================================--
 --== Corona File Module
 --====================================================================--
-
-
-local File = newClass( LuaFile, { name="DMC Files" } )
 
 
 
