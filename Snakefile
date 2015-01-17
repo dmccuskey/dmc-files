@@ -17,12 +17,15 @@ module_config = {
 			"DMC-Lua-Library"
 		]
 	},
-	"examples": [
-		{
-			"dir": "examples/dmc-files-readconfig",
-			"requires": []
-		}
-	],
+	"examples": {
+		"dir": "examples",
+		"apps": [
+			{
+				"dir": "dmc-files-readconfig",
+				"requires": []
+			}
+		]
+	},
 	"tests": {
 		"files": [
 		],
