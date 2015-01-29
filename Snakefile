@@ -19,10 +19,10 @@ module_config = {
 		]
 	},
 	"examples": {
-		"dir": "examples",
+		"base_dir": "examples",
 		"apps": [
 			{
-				"dir": "dmc-files-readconfig",
+				"exp_dir": "dmc-files-readconfig",
 				"requires": []
 			}
 		]
