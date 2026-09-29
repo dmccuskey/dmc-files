@@ -105,7 +105,7 @@ To update, copy `dmc_corona_boot.lua` and `dmc_corona/` again from the newer ver
 
 ## Documentation
 
-`require 'dmc_corona.dmc_files'` returns lua-files' module with two functions replaced, so its documentation applies to the rest as written:
+`require 'dmc_corona.dmc_files'` returns a copy of lua-files' module with two functions replaced, so its documentation applies to the rest as written:
 
 - [Reference](https://github.com/dmccuskey/lua-files#reference): the text, JSON and config file functions, and the config format with its types
 - [In Solar2D](https://github.com/dmccuskey/lua-files#in-solar2d): paths from `system.pathForFile()`, and `dmc_corona.cfg`
@@ -115,10 +115,10 @@ To update, copy `dmc_corona_boot.lua` and `dmc_corona/` again from the newer ver
 
 | function | does |
 |---|---|
-| `fileExists( name, options )` | Returns `true` if `name` exists in `options.base_dir` (default `system.DocumentsDirectory`), `false` if not. `name` may include subfolders (`'saves/game1.json'`). Also `true` for a folder. |
-| `remove( items, options )` | Removes files and folders. `items` is a name in `options.base_dir` (default `system.DocumentsDirectory`), a list of names, or a folder constant such as `system.TemporaryDirectory`. A folder, by name or constant, is emptied: every file in it and in its subfolders, and the subfolders themselves unless `options.rm_dir` is `false`; a folder given by name is then removed too, under the same option. Prints an error, rather than raising one, when a file can't be removed; a name that doesn't exist is skipped. |
+| `fileExists( name, options )` | Returns `true` if `name` exists in `options.base_dir` (default `system.DocumentsDirectory`), `false` if not. `name` may include subfolders (`'saves/game1.json'`). `false` for a folder. |
+| `remove( items, options )` | Removes files and folders. `items` is a name in `options.base_dir` (default `system.DocumentsDirectory`), a list of names, or a folder constant such as `system.TemporaryDirectory`. A folder, by name or constant, is emptied: every file in it and in its subfolders, and the subfolders themselves unless `options.rm_dir` is `false`; a folder given by name is then removed too, under the same option; a Solar2D folder itself stays. A name that doesn't exist is skipped. A file that can't be removed raises `os.remove()`'s error (`<path>: Permission denied`), and the removal stops there. |
 
-They replace lua-files' `remove()` and `fileExists()` in the shared module, so every module that requires `lib.dmc_lua.lua_files` gets them once dmc-files has loaded: after that, `fileExists()` takes a name and a Solar2D folder, not lua-files' full path.
+The module also has `VERSION`, dmc-files' version (`__version` is lua-files'). The module that `lib.dmc_lua.lua_files` gives other code is left as it is: there, `fileExists()` and `remove()` still take full paths. `remove()` with a name is lua-files' `remove()` with the path from `system.pathForFile()`.
 
 ## Examples
 
@@ -130,14 +130,13 @@ dmc-files has no settings: `dmc_corona.cfg` needs no section for it, only the `[
 
 ## Known Issues
 
-The bugs of the file functions themselves are in lua-files' [Known Issues](https://github.com/dmccuskey/lua-files#known-issues); the ones most likely to be met: `writeJSONFile()` errors (use `saveFile( path, File.convertLuaToJson( data ) )`), and config section and key names with digits (`[SERVER2]`) make `readConfigFile()` raise. In `dmc_files.lua`:
+The bugs of the file functions themselves are in lua-files' [Known Issues](https://github.com/dmccuskey/lua-files#known-issues). In `dmc_files.lua`:
 
 - `fileExists()` for a missing file in `system.ResourceDirectory` returns `false` but also prints Solar2D's warning `Cannot create path for resource file`.
-- Its version (`1.1.1`) isn't available to code.
 
 ## Development
 
-Only `dmc_corona/dmc_files.lua` is written in this repository. It loads the DMC boot loader, takes lua-files' module from `lib.dmc_lua.lua_files` and replaces `fileExists()` and `remove()` with the Solar2D versions (its `fileExists()` calls lua-files' one with the full path). Everything else is a generated copy; fix it in its own repository, then rebuild:
+Only `dmc_corona/dmc_files.lua` and the tests are written in this repository. It loads the DMC boot loader, copies lua-files' module from `lib.dmc_lua.lua_files` and replaces `fileExists()` and `remove()` in the copy with the Solar2D versions, which turn names and Solar2D folders into paths and call lua-files' functions. Everything else is a generated copy; fix it in its own repository, then rebuild:
 
 | file | owner |
 |---|---|
@@ -151,7 +150,13 @@ The copies are made by Snakemake from sibling checkouts of the repositories abov
 snakemake --cores 1 build_all
 ```
 
-dmc-files has no tests of its own; lua-files' are in its `spec/`. The Quick Start and the example are the checks that the package loads in Solar2D.
+The unit tests cover `fileExists()` and `remove()` in plain Lua 5.1, with LuaFileSystem and stand-ins for Solar2D's folders; lua-files' own tests are in its `spec/`. From the repository's root folder:
+
+```sh
+tests/run_unit.sh
+```
+
+The Quick Start and the example are the checks that the package loads in Solar2D.
 
 ## License
 
