@@ -2,14 +2,15 @@
 
 Read and write files in a Solar2D (formerly Corona SDK) app in one call each: plain text, a file's lines, JSON, and simple config files with typed values.
 
-dmc-files is [lua-files](https://github.com/dmccuskey/lua-files) packaged like the other DMC Solar2D libraries, plus a `remove()` that takes a file name and a Solar2D folder. The DMC libraries read their `dmc_corona.cfg` in its config format:
+dmc-files is [lua-files](https://github.com/dmccuskey/lua-files) packaged like the other DMC Solar2D libraries, plus a `fileExists()` and a `remove()` that take a file name and a Solar2D folder. The DMC libraries read their `dmc_corona.cfg` in its config format:
 
 ```lua
 local File = require 'dmc_corona.dmc_files'
 
 local path = system.pathForFile( 'scores.json', system.DocumentsDirectory )
 local data = File.readJSONFile( path )     -- a Lua table
-File.remove( 'scores.json' )               -- from system.DocumentsDirectory
+print( File.fileExists( 'scores.json' ) )  -- in system.DocumentsDirectory
+File.remove( 'scores.json' )
 ```
 
 ## Features
@@ -18,7 +19,8 @@ File.remove( 'scores.json' )               -- from system.DocumentsDirectory
 - Write a string to a file
 - Read a JSON file into a Lua table, with Solar2D's `json`
 - Read a config file of `[SECTIONS]` and `KEY = value` lines, with the value cast by a type in the key (`PORT:INT = 8080`): boolean, number, JSON, module path, string
-- Remove a file by name, or everything in a Solar2D folder such as `system.TemporaryDirectory`
+- Check that a file exists, by name and Solar2D folder
+- Remove files and folders by name, or everything in a Solar2D folder such as `system.TemporaryDirectory`
 - Pure Lua, no plugins needed; MIT licensed
 
 ## Quick Start
@@ -78,9 +80,9 @@ local scores = File.readJSONFile( scores_path )
 print( scores.player, scores.points[2] )
 
 -- remove what we wrote
-File.remove( 'notes.txt' )
-File.remove( 'scores.json' )
-print( io.open( notes_path ) == nil, io.open( scores_path ) == nil )
+print( File.fileExists( 'notes.txt' ), File.fileExists( 'scores.json' ) )
+File.remove( { 'notes.txt', 'scores.json' } )
+print( File.fileExists( 'notes.txt' ), File.fileExists( 'scores.json' ) )
 
 display.newText( cfg.default.name, display.contentCenterX, display.contentCenterY, native.systemFont, 32 )
 ```
@@ -92,11 +94,12 @@ Space Game	example.com	8081	true
 3	three
 ann	25
 true	true
+false	false
 ```
 
 If the console shows `module 'dmc_corona.dmc_files' not found` instead, `dmc_corona/` is missing from the root of the project folder.
 
-The config file's sections become tables with lowercase names, and keys outside a section go into `default`; `PORT:INT` and `SECURE:BOOL` are cast to a number and a boolean. The read and write functions take a full path, from `system.pathForFile()`; `remove()` takes a file name and looks in `system.DocumentsDirectory` unless told otherwise. The app's own folder (`system.ResourceDirectory`) is read-only on devices: write to `system.DocumentsDirectory` or `system.TemporaryDirectory`.
+The config file's sections become tables with lowercase names, and keys outside a section go into `default`; `PORT:INT` and `SECURE:BOOL` are cast to a number and a boolean. The read and write functions take a full path, from `system.pathForFile()`; `fileExists()` and `remove()` take a file name and look in `system.DocumentsDirectory` unless told otherwise. The app's own folder (`system.ResourceDirectory`) is read-only on devices: write to `system.DocumentsDirectory` or `system.TemporaryDirectory`.
 
 To update, copy `dmc_corona_boot.lua` and `dmc_corona/` again from the newer version. Keep your own `dmc_corona.cfg` if you have changed it.
 
@@ -112,10 +115,10 @@ To update, copy `dmc_corona_boot.lua` and `dmc_corona/` again from the newer ver
 
 | function | does |
 |---|---|
-| `remove( items, options )` | Removes files from a Solar2D folder. `items` is a file name (in `options.base_dir`, default `system.DocumentsDirectory`), or a folder constant such as `system.TemporaryDirectory`, which removes every file in it and in its subfolders, and the subfolders themselves unless `options.rm_dir` is `false`. Prints an error, rather than raising one, when a file can't be removed. See Known Issues for folder names and lists. |
-| `fileExists( name, options )` | Meant to say whether `name` exists in `options.base_dir` (default `system.DocumentsDirectory`); it raises an error instead (Known Issues). |
+| `fileExists( name, options )` | Returns `true` if `name` exists in `options.base_dir` (default `system.DocumentsDirectory`), `false` if not. `name` may include subfolders (`'saves/game1.json'`). Also `true` for a folder. |
+| `remove( items, options )` | Removes files and folders. `items` is a name in `options.base_dir` (default `system.DocumentsDirectory`), a list of names, or a folder constant such as `system.TemporaryDirectory`. A folder, by name or constant, is emptied: every file in it and in its subfolders, and the subfolders themselves unless `options.rm_dir` is `false`; a folder given by name is then removed too, under the same option. Prints an error, rather than raising one, when a file can't be removed; a name that doesn't exist is skipped. |
 
-They replace lua-files' `remove()` and `fileExists()` in the shared module, so every module that requires `lib.dmc_lua.lua_files` gets them once dmc-files has loaded.
+They replace lua-files' `remove()` and `fileExists()` in the shared module, so every module that requires `lib.dmc_lua.lua_files` gets them once dmc-files has loaded: after that, `fileExists()` takes a name and a Solar2D folder, not lua-files' full path.
 
 ## Examples
 
@@ -129,14 +132,12 @@ dmc-files has no settings: `dmc_corona.cfg` needs no section for it, only the `[
 
 The bugs of the file functions themselves are in lua-files' [Known Issues](https://github.com/dmccuskey/lua-files#known-issues); the ones most likely to be met: `writeJSONFile()` errors (use `saveFile( path, File.convertLuaToJson( data ) )`), and config section and key names with digits (`[SERVER2]`) make `readConfigFile()` raise. In `dmc_files.lua`:
 
-- **`fileExists()` always errors** (`attempt to index global 'LuaFile' (a nil value)`): it calls lua-files' function under a name that doesn't exist. Because it replaces lua-files' own `fileExists()`, which works, loading dmc-files breaks `fileExists()` for every module. Check with `io.open( system.pathForFile( name, dir ) )` instead.
-- **`remove()` of a folder name errors**: for a name that is a folder it calls an undefined `rm_dir()`. A list of names does nothing. A file name and a Solar2D folder constant work.
-- It sets the global `_extend` (its copy of `Utils.extend()` declares the inner function without `local`).
-- Its version (`1.1.0`) isn't available to code.
+- `fileExists()` for a missing file in `system.ResourceDirectory` returns `false` but also prints Solar2D's warning `Cannot create path for resource file`.
+- Its version (`1.1.1`) isn't available to code.
 
 ## Development
 
-Only `dmc_corona/dmc_files.lua` is written in this repository. It loads the DMC boot loader, takes lua-files' module from `lib.dmc_lua.lua_files` and replaces `fileExists()` and `remove()` with the Solar2D versions. Everything else is a generated copy; fix it in its own repository, then rebuild:
+Only `dmc_corona/dmc_files.lua` is written in this repository. It loads the DMC boot loader, takes lua-files' module from `lib.dmc_lua.lua_files` and replaces `fileExists()` and `remove()` with the Solar2D versions (its `fileExists()` calls lua-files' one with the full path). Everything else is a generated copy; fix it in its own repository, then rebuild:
 
 | file | owner |
 |---|---|
