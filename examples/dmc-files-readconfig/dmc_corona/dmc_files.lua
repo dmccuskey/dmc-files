@@ -1,7 +1,7 @@
 --====================================================================--
 -- dmc_corona/dmc_files.lua
 --
--- Documentation: http://docs.davidmccuskey.com/
+-- Documentation: https://github.com/dmccuskey/dmc-files
 --====================================================================--
 
 --[[
@@ -39,7 +39,7 @@ SOFTWARE.
 
 -- Semantic Versioning Specification: http://semver.org/
 
-local VERSION = "1.1.0"
+local VERSION = "1.1.1"
 
 
 
@@ -56,7 +56,7 @@ local Utils = {} -- make copying from dmc_utils easier
 
 function Utils.extend( fromTable, toTable )
 
-	function _extend( fT, tT )
+	local function _extend( fT, tT )
 
 		for k,v in pairs( fT ) do
 
@@ -127,6 +127,9 @@ local dmc_files_data = Utils.extend( dmc_lib_data.dmc_files, DMC_FILES_DEFAULTS 
 local lfs = require 'lfs'
 local File = require 'lib.dmc_lua.lua_files'
 
+-- lua-files' version, which takes a full path
+local LuaFile_fileExists = File.fileExists
+
 
 
 --====================================================================--
@@ -145,8 +148,10 @@ function File.fileExists( filename, options )
 	options = options or {}
 	if options.base_dir == nil then options.base_dir = system.DocumentsDirectory end
 
+	-- nil for a missing file in system.ResourceDirectory
 	local file_path = system.pathForFile( filename, options.base_dir )
-	return LuaFile.fileExists( file_path, options )
+	if file_path == nil then return false end
+	return LuaFile_fileExists( file_path )
 end
 
 
@@ -218,7 +223,7 @@ function File.remove( items, options )
 		f_mode = lfs.attributes( f_path, 'mode' )
 
 		if f_mode == 'directory' then
-			rm_dir( f_path, options )
+			File._removeDir( f_path, options )
 			if options.rm_dir == true then
 				File._removeFile( f_path, options )
 			end
@@ -229,6 +234,9 @@ function File.remove( items, options )
 
 	-- if items is list of names
 	elseif f_type == 'table' then
+		for _, item in ipairs( items ) do
+			File.remove( item, options )
+		end
 
 	end
 
